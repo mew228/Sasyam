@@ -1,0 +1,3 @@
+# Place your 300 WebP image sequence frames here.
+# Naming convention: frame_0001.webp, frame_0002.webp, … frame_0300.webp
+# These are loaded by js/flower.js for the scroll-driven hero animation.

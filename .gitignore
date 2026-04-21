@@ -1,0 +1,47 @@
+# ── Dataset (large files, not committed) ──────────────────────
+dataset/
+
+# ── ML model files ────────────────────────────────────────────
+model/sasyam_crop_model.h5
+model/sasyam_best.h5
+model/training_history.json
+model/confusion_matrix.png
+model/training_curves.png
+model/model_card.md
+.hf_cache/
+
+# ── Python ────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+.venv/
+venv/
+env/
+.env
+
+# ── Backend secrets ───────────────────────────────────────────
+backend/.env
+backend/sample_images/
+
+# ── Node / Frontend ───────────────────────────────────────────
+node_modules/
+.npm/
+*.log
+
+# ── OS ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE ───────────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
