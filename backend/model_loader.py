@@ -1,120 +1,133 @@
-# backend/model_loader.py
-# ─────────────────────────────────────────────────────────────
-# Sasyam — Model loader with Hugging Face Hub fallback
-# Downloads model if not cached locally, then loads with Keras.
-# Exposes predict(image_array) → {class_name, confidence}
-# ─────────────────────────────────────────────────────────────
-
 import os
-import json
-import asyncio
+import io
+import time
+import requests
+from tqdm import tqdm
+from dotenv import load_dotenv
+from PIL import Image
 import numpy as np
 
-# Lazy imports (avoid hard crash if TF not installed in dev)
-_model          = None
-_class_indices  = {}      # { "Wheat": 0, "Rice": 1, … }
-_idx_to_class   = {}      # reverse: { 0: "Wheat", … }
+load_dotenv()
 
-LOCAL_MODEL_PATH  = os.environ.get("LOCAL_MODEL_PATH",  "sasyam_crop_model.h5")
-HF_MODEL_REPO     = os.environ.get("HF_MODEL_REPO",     "")   # e.g. "your-username/sasyam-crop-model"
-HF_TOKEN          = os.environ.get("HF_TOKEN",          "")
-CLASS_INDICES_PATH = os.path.join(os.path.dirname(__file__), "..", "model", "class_indices.json")
+# We delay importing tensorflow until needed or just import it here.
+# Importing it globally is fine, it will just take a bit at startup.
+import tensorflow as tf
 
-# Fallback class list (used when class_indices.json is empty / missing)
-FALLBACK_CLASSES  = ["Corn", "Wheat", "Sugarcane", "Other"]
+HF_MODEL_URL = "https://huggingface.co/BeluBeluga/Bloom/resolve/main/cropmodel.h5"
+CLASS_NAMES = ["Corn", "Other", "Sugarcane", "Wheat"]
+MODEL_INPUT_SIZE = (64, 64)
 
+model = None
 
-def _load_class_indices():
-    global _class_indices, _idx_to_class
+def download_model_from_hf():
+    print(f"Downloading model from {HF_MODEL_URL}...")
+    try:
+        response = requests.get(HF_MODEL_URL, stream=True)
+        response.raise_for_status()
+        total_size = int(response.headers.get('content-length', 0))
+        block_size = 1024 * 1024 # 1 MB
+        
+        with open("cropmodel.h5", "wb") as f, tqdm(
+            desc="cropmodel.h5",
+            total=total_size,
+            unit="iB",
+            unit_scale=True,
+            unit_divisor=1024,
+        ) as bar:
+            for data in response.iter_content(block_size):
+                size = f.write(data)
+                bar.update(size)
+        print("Model downloaded successfully.")
+    except requests.exceptions.RequestException as e:
+        print(f"Error downloading model: {e}")
+        if os.path.exists("cropmodel.h5"):
+            os.remove("cropmodel.h5")
+        raise RuntimeError(f"Failed to download model: {e}")
 
-    if os.path.exists(CLASS_INDICES_PATH):
-        with open(CLASS_INDICES_PATH, "r") as f:
+def load_model_instance():
+    # 1. LOCAL_MODEL_PATH
+    local_path = os.getenv("LOCAL_MODEL_PATH")
+    if local_path and os.path.exists(local_path):
+        print(f"Loading model from LOCAL_MODEL_PATH: {local_path}")
+        return tf.keras.models.load_model(local_path)
+    
+    # 2. HF_MODEL_URL Download
+    hf_path = "cropmodel.h5"
+    if not os.path.exists(hf_path):
+        try:
+            download_model_from_hf()
+        except Exception as e:
+            print(f"HF download failed: {e}")
+            
+    if os.path.exists(hf_path):
+        try:
+            print(f"Loading model from HF path: {hf_path}")
+            return tf.keras.models.load_model(hf_path)
+        except Exception as e:
+            print(f"Error loading {hf_path}: {e}")
+    
+    # 3. Fallbacks
+    fallbacks = [
+        "../model/sasyam_crop_model.h5",
+        "../model/sasyam_best.h5",
+        "../model/sasyam_crop_model.keras",
+        "../model/sasyam_best.keras"
+    ]
+    
+    for path in fallbacks:
+        if os.path.exists(path):
             try:
-                _class_indices = json.load(f)
-            except json.JSONDecodeError:
-                _class_indices = {}
+                print(f"Loading model from fallback path: {path}")
+                return tf.keras.models.load_model(path)
+            except Exception as e:
+                print(f"Error loading fallback {path}: {e}")
 
-    if not _class_indices:
-        print("[model_loader] class_indices.json empty — using fallback classes.")
-        _class_indices = {c: i for i, c in enumerate(FALLBACK_CLASSES)}
+    raise RuntimeError("No model found in any priority path. Please check model paths or download manually.")
 
-    _idx_to_class = {v: k for k, v in _class_indices.items()}
-    print(f"[model_loader] Classes: {list(_class_indices.keys())}")
-
-
-def _download_from_hf():
-    """Download model file from Hugging Face Hub."""
-    if not HF_MODEL_REPO:
-        return None
+def initialize():
+    global model
     try:
-        from huggingface_hub import hf_hub_download
-        path = hf_hub_download(
-            repo_id   = HF_MODEL_REPO,
-            filename  = "sasyam_crop_model.h5",
-            token     = HF_TOKEN or None,
-            cache_dir  = "./.hf_cache"
-        )
-        print(f"[model_loader] Downloaded model from HF Hub → {path}")
-        return path
+        model = load_model_instance()
     except Exception as e:
-        print(f"[model_loader] HF Hub download failed: {e}")
-        return None
+        print(f"Failed to initialize model: {e}")
+        raise e
 
-
-async def load_model_on_startup():
-    """
-    Called during FastAPI lifespan startup.
-    Tries local path first, then Hugging Face Hub.
-    """
-    global _model
-    _load_class_indices()
-
-    model_path = None
-
-    # 1. Local model file
-    if os.path.exists(LOCAL_MODEL_PATH):
-        model_path = LOCAL_MODEL_PATH
-        print(f"[model_loader] Using local model: {model_path}")
-    else:
-        print(f"[model_loader] Local model not found at '{LOCAL_MODEL_PATH}'.")
-        # 2. Download from HF Hub in a thread (avoid blocking event loop)
-        loop = asyncio.get_event_loop()
-        model_path = await loop.run_in_executor(None, _download_from_hf)
-
-    if not model_path:
-        print("[model_loader] ⚠ No model available. /predict will return mock data.")
-        return
-
+def preprocess_image(image_bytes: bytes) -> np.ndarray:
     try:
-        import tensorflow as tf
-        _model = tf.keras.models.load_model(model_path)
-        print(f"[model_loader] ✓ Model loaded. Input shape: {_model.input_shape}")
+        image = Image.open(io.BytesIO(image_bytes))
+        if image.mode != "RGB":
+            image = image.convert("RGB")
+        image = image.resize(MODEL_INPUT_SIZE)
+        img_array = np.array(image, dtype=np.float32)
+        img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array)
+        return np.expand_dims(img_array, axis=0)
     except Exception as e:
-        print(f"[model_loader] ✗ Failed to load model: {e}")
-        _model = None
+        raise ValueError(f"Image preprocessing failed: {e}")
 
-
-def predict(image_array: np.ndarray) -> dict:
-    """
-    Run inference on a preprocessed 224×224 image array (float32, 0–1).
-
-    Returns:
-        { "class_name": str, "confidence": float }
-    """
-    if _model is None:
-        # Mock prediction for development (no model loaded)
-        import random
-        cls   = random.choice(list(_idx_to_class.values()) or FALLBACK_CLASSES)
-        conf  = round(random.uniform(0.72, 0.98), 4)
-        print(f"[model_loader] MOCK prediction: {cls} ({conf})")
-        return { "class_name": cls, "confidence": conf }
-
-    # Ensure input shape is (1, 224, 224, 3)
-    arr = np.expand_dims(image_array.astype("float32"), axis=0)
-
-    preds     = _model.predict(arr, verbose=0)
-    idx       = int(np.argmax(preds[0]))
-    confidence = float(preds[0][idx])
-    class_name = _idx_to_class.get(idx, f"class_{idx}")
-
-    return { "class_name": class_name, "confidence": confidence }
+def predict(image_bytes: bytes) -> dict:
+    global model
+    if model is None:
+        raise RuntimeError("Model is not initialized.")
+    
+    start_time = time.time()
+    try:
+        processed_image = preprocess_image(image_bytes)
+        predictions = model.predict(processed_image)
+        scores = predictions[0]
+        
+        predicted_class_idx = np.argmax(scores)
+        confidence = float(scores[predicted_class_idx])
+        
+        all_scores = {CLASS_NAMES[i]: float(scores[i]) for i in range(len(CLASS_NAMES))}
+        
+        inference_time_ms = (time.time() - start_time) * 1000.0
+        
+        return {
+            "class_name": CLASS_NAMES[predicted_class_idx],
+            "confidence": round(confidence, 4),
+            "confidence_pct": f"{confidence * 100:.2f}%",
+            "all_scores": {k: round(v, 4) for k, v in all_scores.items()},
+            "inference_time_ms": round(inference_time_ms, 2)
+        }
+    except Exception as e:
+        raise RuntimeError(f"Prediction failed: {e}")

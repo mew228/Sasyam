@@ -1,208 +1,200 @@
-# backend/main.py
-# ─────────────────────────────────────────────────────────────
-# Sasyam FastAPI Backend
-# Routes: /health, /stats, /live-feed, /predict, /market/{crop}
-# ─────────────────────────────────────────────────────────────
-
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-import io
 import os
-import glob
 import random
-import numpy as np
-from PIL import Image
+import time
+import datetime
+from pathlib import Path
+from dotenv import load_dotenv
 
-from model_loader import load_model_on_startup, predict
-from analytics import get_market_data, get_regional_stats
+import model_loader
+import analytics
 
-# ── App ───────────────────────────────────────────────────── #
+load_dotenv()
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: load ML model from HuggingFace Hub."""
-    print("[Sasyam] Starting up — loading model…")
-    await load_model_on_startup()
-    print("[Sasyam] Model ready. API is live. 🌾")
+    import sys
+    if sys.stdout.encoding != 'utf-8':
+        try:
+            sys.stdout.reconfigure(encoding='utf-8')
+        except Exception:
+            pass
+    print("Sasyam backend starting up...")
+    model_loader.initialize()
+    print("Model loaded and ready")
     yield
-    print("[Sasyam] Shutting down.")
+    print("Sasyam backend shutting down")
 
-app = FastAPI(
-    title       = "Sasyam Agricultural Intelligence API",
-    description = "AI-powered crop analytics for Indian farmers.",
-    version     = "1.0.0",
-    lifespan    = lifespan
-)
+app = FastAPI(title="Sasyam API", version="1.0.0", lifespan=lifespan)
 
-# ── CORS ──────────────────────────────────────────────────── #
 app.add_middleware(
     CORSMiddleware,
-    allow_origins     = ["*"],
-    allow_credentials = True,
-    allow_methods     = ["*"],
-    allow_headers     = ["*"],
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# ── Sample image folder (for live-feed) ───────────────────── #
-SAMPLES_DIR = os.environ.get("SAMPLES_DIR", "./sample_images")
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = (time.time() - start_time) * 1000
+    formatted_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{formatted_time}] {request.method} {request.url.path} — {response.status_code} — {process_time:.0f}ms")
+    return response
 
-
-# ═════════════════════════════════════════════════════════════
-# GET /health
-# ═════════════════════════════════════════════════════════════
-@app.get("/health", tags=["System"])
-async def health_check():
-    """Returns API health status."""
-    return {
-        "status":  "ok",
-        "service": "Sasyam API",
-        "version": "1.0.0"
-    }
-
-
-# ═════════════════════════════════════════════════════════════
-# GET /stats
-# ═════════════════════════════════════════════════════════════
-@app.get("/stats", tags=["Analytics"])
-async def get_stats():
-    """
-    Returns platform-wide crop distribution, farmer count,
-    yield averages, and market demand with 7-day price trends.
-    """
-    market = get_market_data()
-
-    crop_distribution = {
-        "Wheat":     28,
-        "Rice":      22,
-        "Corn":      14,
-        "Sugarcane": 16,
-        "Cotton":    8,
-        "Mustard":   7,
-        "Pulses":    5
-    }
-
-    price_trends = {
-        crop: data.get("price_trend_7day", [])
-        for crop, data in market.items()
-    }
-
-    return {
-        "totalFarmers":     124680,
-        "areaCoverage":     892340,
-        "avgYield":         3.1,
-        "activeCrops":      7,
-        "cropDistribution": crop_distribution,
-        "priceTrends":      price_trends,
-        "timestamp":        _now_iso()
-    }
-
-
-# ═════════════════════════════════════════════════════════════
-# GET /live-feed
-# ═════════════════════════════════════════════════════════════
-@app.get("/live-feed", tags=["Inference"])
-async def live_feed():
-    """
-    Picks a random sample image from SAMPLES_DIR, runs
-    MobileNetV2 inference, and returns the prediction.
-    """
-    patterns = ["*.jpg", "*.jpeg", "*.png", "*.webp"]
-    images   = []
-    for pat in patterns:
-        images.extend(glob.glob(os.path.join(SAMPLES_DIR, pat)))
-
-    if not images:
-        raise HTTPException(
-            status_code = 404,
-            detail      = f"No sample images found in {SAMPLES_DIR}"
-        )
-
-    path = random.choice(images)
-    img  = Image.open(path).convert("RGB").resize((224, 224))
-    arr  = np.array(img) / 255.0
-
-    result = predict(arr)
-
-    return {
-        "file":       os.path.basename(path),
-        "prediction": result["class_name"],
-        "confidence": round(result["confidence"], 4),
-        "timestamp":  _now_iso()
-    }
-
-
-# ═════════════════════════════════════════════════════════════
-# POST /predict
-# ═════════════════════════════════════════════════════════════
-@app.post("/predict", tags=["Inference"])
-async def predict_crop(file: UploadFile = File(...)):
-    """
-    Accepts an image upload (jpg/png/webp), runs MobileNetV2
-    inference, and returns crop class + confidence score.
-    """
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="File must be an image.")
-
-    contents = await file.read()
+@app.get("/health")
+async def get_health():
     try:
-        img = Image.open(io.BytesIO(contents)).convert("RGB").resize((224, 224))
-    except Exception:
-        raise HTTPException(status_code=400, detail="Unable to process image.")
+        return {
+            "status": "ok",
+            "model_loaded": model_loader.model is not None,
+            "model_classes": model_loader.CLASS_NAMES,
+            "version": "1.0.0",
+            "uptime_seconds": 123.4, # Just a placeholder as per spec
+            "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
+        }
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": "Health check failed", "detail": str(e)})
 
-    arr    = np.array(img) / 255.0
-    result = predict(arr)
+@app.get("/stats")
+async def get_stats(state: str = Query(None)):
+    try:
+        stats = analytics.get_dashboard_stats()
+        if state:
+            regional = analytics.get_regional_stats(state)
+            stats["regional_stats"] = regional
+        return stats
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": "Failed to fetch stats", "detail": str(e)})
 
-    return {
-        "filename":   file.filename,
-        "prediction": result["class_name"],
-        "confidence": round(result["confidence"], 4),
-        "timestamp":  _now_iso()
-    }
+@app.get("/market")
+async def get_market():
+    try:
+        return analytics.get_market_data()
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": "Failed to fetch market data", "detail": str(e)})
 
+@app.get("/market/{crop}")
+async def get_market_single(crop: str):
+    try:
+        data = analytics.get_market_data()
+        for k, v in data.items():
+            if k.lower() == crop.lower():
+                similar_crops = []
+                if k in ["Wheat", "Rice", "Corn"]: similar_crops = ["Wheat", "Rice", "Corn"]
+                elif k in ["Cotton", "Jute"]: similar_crops = ["Cotton", "Sugarcane"]
+                elif k in ["Pulses", "Soybean", "Mustard"]: similar_crops = ["Pulses", "Mustard"]
+                
+                v["similar_crops"] = [c for c in similar_crops if c != k]
+                return v
+        return JSONResponse(status_code=404, content={"error": "Crop not found", "detail": f"Market data for {crop} is not available."})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": "Failed to fetch market data for crop", "detail": str(e)})
 
-# ═════════════════════════════════════════════════════════════
-# GET /market/{crop}
-# ═════════════════════════════════════════════════════════════
-VALID_CROPS = {"Wheat", "Rice", "Corn", "Sugarcane", "Cotton", "Mustard", "Pulses"}
+@app.post("/predict")
+async def create_prediction(file: UploadFile = File(...)):
+    try:
+        if not file.content_type.startswith("image/"):
+            return JSONResponse(status_code=400, content={"error": "Invalid file type", "detail": "Uploaded file must be an image."})
+        
+        content = await file.read()
+        if len(content) > 10 * 1024 * 1024:
+            return JSONResponse(status_code=400, content={"error": "File too large", "detail": "Image size must be under 10MB."})
+            
+        result = model_loader.predict(content)
+        return result
+    except RuntimeError as e:
+        return JSONResponse(status_code=500, content={"error": "Model prediction failed", "detail": str(e)})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": "Server error during prediction", "detail": str(e)})
 
-@app.get("/market/{crop}", tags=["Market"])
-async def market_info(crop: str):
-    """
-    Returns price trend, demand index, supply ratio, and
-    market status for the given crop.
-    """
-    crop_title = crop.strip().title()
-    if crop_title not in VALID_CROPS:
-        raise HTTPException(
-            status_code = 400,
-            detail      = f"Unknown crop '{crop}'. Valid: {sorted(VALID_CROPS)}"
-        )
+@app.get("/live-feed")
+async def get_live_feed():
+    try:
+        locations = [
+            {"name": "Ludhiana, Punjab", "lat": 30.9010, "lng": 75.8573},
+            {"name": "Nashik, Maharashtra", "lat": 20.0110, "lng": 73.7903},
+            {"name": "Guntur, Andhra Pradesh", "lat": 16.3067, "lng": 80.4365},
+            {"name": "Patna, Bihar", "lat": 25.5941, "lng": 85.1376},
+            {"name": "Indore, Madhya Pradesh", "lat": 22.7196, "lng": 75.8577},
+            {"name": "Jaipur, Rajasthan", "lat": 26.9124, "lng": 75.7873},
+            {"name": "Coimbatore, Tamil Nadu", "lat": 11.0168, "lng": 76.9558},
+            {"name": "Varanasi, Uttar Pradesh", "lat": 25.3176, "lng": 82.9739}
+        ]
+        
+        loc = random.choice(locations)
+        
+        samples_dir = os.getenv("SAMPLES_DIR", "")
+        if samples_dir and os.path.exists(samples_dir) and os.path.isdir(samples_dir):
+            images = [f for f in os.listdir(samples_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+            if images:
+                img_name = random.choice(images)
+                img_path = os.path.join(samples_dir, img_name)
+                with open(img_path, "rb") as f:
+                    content = f.read()
+                prediction = model_loader.predict(content)
+                return {
+                    "source": "real",
+                    "location": loc["name"],
+                    "coordinates": {"lat": loc["lat"], "lng": loc["lng"]},
+                    "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+                    "prediction": {
+                        "class_name": prediction["class_name"],
+                        "confidence": prediction["confidence"],
+                        "confidence_pct": prediction["confidence_pct"]
+                    },
+                    "area_hectares": round(random.uniform(1.0, 5.0), 1),
+                    "alert": None
+                }
+        
+        # Simulated fallback
+        simulated_class = random.choice(model_loader.CLASS_NAMES)
+        confidence = random.uniform(0.85, 0.99)
+        return {
+            "source": "simulated",
+            "location": loc["name"],
+            "coordinates": {"lat": loc["lat"], "lng": loc["lng"]},
+            "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+            "prediction": {
+                "class_name": simulated_class,
+                "confidence": round(confidence, 4),
+                "confidence_pct": f"{confidence * 100:.2f}%"
+            },
+            "area_hectares": round(random.uniform(1.0, 5.0), 1),
+            "alert": None
+        }
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": "Live feed failed", "detail": str(e)})
 
-    data = get_market_data()
-    crop_data = data.get(crop_title)
-    if not crop_data:
-        raise HTTPException(status_code=404, detail=f"No data for {crop_title}")
+@app.get("/suggestions")
+async def get_suggestions(
+    region: str = Query(...), 
+    season: str = Query(...), 
+    land_size: float = Query(...), 
+    water: str = Query(...), 
+    risk: str = Query(...)
+):
+    try:
+        suggestions = analytics.get_crop_suggestions(region, season, land_size, water, risk)
+        return suggestions
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": "Failed to generate suggestions", "detail": str(e)})
 
-    return {
-        "crop":             crop_title,
-        **crop_data,
-        "timestamp":        _now_iso()
-    }
+@app.get("/weather")
+async def get_weather(state: str = Query(...)):
+    try:
+        return analytics.get_weather_data(state)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": "Failed to fetch weather data", "detail": str(e)})
 
-
-# ═════════════════════════════════════════════════════════════
-# GET /regional/{state}
-# ═════════════════════════════════════════════════════════════
-@app.get("/regional/{state}", tags=["Analytics"])
-async def regional_stats(state: str):
-    """Yield comparison and growth trend for a given Indian state."""
-    data = get_regional_stats(state)
-    if not data:
-        raise HTTPException(status_code=404, detail=f"No data for state: {state}")
-    return { "state": state, **data, "timestamp": _now_iso() }
-
-
-# ── Utility ───────────────────────────────────────────────── #
-def _now_iso():
-    from datetime import datetime, timezone
-    return datetime.now(timezone.utc).isoformat()
+@app.get("/regional/{state}")
+async def get_regional_state(state: str):
+    try:
+        return analytics.get_regional_stats(state)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": "Failed to fetch regional stats", "detail": str(e)})
