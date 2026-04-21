@@ -65,6 +65,9 @@ MODEL_CARD_PATH   = "model_card.md"
 CONFUSION_MATRIX_PATH = "confusion_matrix.png"
 TRAINING_CURVES_PATH  = "training_curves.png"
 
+# Public HuggingFace model URL (no auth token required)
+HF_MODEL_URL = "https://huggingface.co/BeluBeluga/Bloom/resolve/main/cropmodel.h5"
+
 IMG_SIZE         = (224, 224)
 BATCH_SIZE       = 32
 PHASE1_EPOCHS    = 15
@@ -76,6 +79,66 @@ VALIDATION_SPLIT = 0.2
 AUTOTUNE         = tf.data.AUTOTUNE
 CLASS_NAMES      = ["Corn", "Other", "Sugarcane", "Wheat"]
 
+
+# ════════════════════════════════════════════════════════════
+# STEP 0.5 — Idempotency Check
+# If a trained model already exists locally, skip training
+# entirely and jump straight to evaluation (Step 10).
+# Safe to re-run without retraining from scratch.
+# ════════════════════════════════════════════════════════════
+_EXISTING_MODEL = None
+for _candidate in [MODEL_SAVE_PATH, BEST_MODEL_PATH,
+                   "sasyam_crop_model.h5", "sasyam_best.h5"]:
+    if os.path.isfile(_candidate):
+        _EXISTING_MODEL = _candidate
+        break
+
+if _EXISTING_MODEL:
+    print(f"\n{'='*60}")
+    print(f"  ✓ Existing model found: {_EXISTING_MODEL}")
+    print("  Skipping training — loading for evaluation only.")
+    print(f"{'='*60}\n")
+    # Load the model and fast-forward to evaluation
+    model = tf.keras.models.load_model(_EXISTING_MODEL, compile=False)
+    model.compile(
+        optimizer = tf.keras.optimizers.Adam(learning_rate=PHASE2_LR),
+        loss      = "sparse_categorical_crossentropy",
+        metrics   = ["accuracy"]
+    )
+    # Reload class indices if they exist
+    if os.path.isfile(CLASS_INDICES_PATH):
+        with open(CLASS_INDICES_PATH) as _f:
+            class_indices = json.load(_f)
+        print(f"  class_indices loaded: {class_indices}")
+    # Load val dataset for evaluation
+    val_ds = tf.keras.utils.image_dataset_from_directory(
+        DATASET_DIR,
+        validation_split = VALIDATION_SPLIT,
+        subset           = "validation",
+        seed             = 42,
+        image_size       = IMG_SIZE,
+        batch_size       = BATCH_SIZE,
+        label_mode       = "int",
+        shuffle          = False,
+        class_names      = CLASS_NAMES
+    ).cache().prefetch(AUTOTUNE)
+    # Jump straight to Step 10
+    print("\n=== Final Evaluation (existing model) ===")
+    final_loss, final_acc = model.evaluate(val_ds, verbose=0)
+    print(f"  Val Loss     : {final_loss:.4f}")
+    print(f"  Val Accuracy : {final_acc * 100:.2f}%")
+    all_true, all_preds = [], []
+    for _imgs, _lbls in val_ds:
+        _p = model.predict(_imgs, verbose=0)
+        all_preds.extend(np.argmax(_p, axis=1))
+        all_true.extend(_lbls.numpy())
+    all_true  = np.array(all_true)
+    all_preds = np.array(all_preds)
+    print("\n=== Classification Report ===")
+    print(classification_report(all_true, all_preds,
+                                target_names=CLASS_NAMES, digits=4))
+    print(f"\n  ► Re-run with the model file deleted to trigger full training.")
+    import sys; sys.exit(0)
 
 # ════════════════════════════════════════════════════════════
 # STEP 3 — Data Loading with Validation
