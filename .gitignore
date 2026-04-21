@@ -3,7 +3,9 @@ dataset/
 
 # ── ML model files ────────────────────────────────────────────
 model/sasyam_crop_model.h5
+model/sasyam_crop_model.keras
 model/sasyam_best.h5
+model/sasyam_best.keras
 model/training_history.json
 model/confusion_matrix.png
 model/training_curves.png
