@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sasyam — Agricultural intelligence platform mapping India's harvest in real time. AI-powered crop analytics, market intelligence, and precision farming for Indian farmers." />
+  <meta name="keywords" content="Sasyam, Indian farmers, agricultural AI, crop analytics, precision farming, market intelligence" />
+  <meta property="og:title" content="Sasyam — Mapping India's Harvest in Real Time" />
+  <meta property="og:description" content="AI-powered agricultural intelligence for Indian farmers." />
+  <meta property="og:type" content="website" />
+  <title>Sasyam — Mapping India's Harvest in Real Time</title>
+
+  <!-- Fonts: Montserrat (Optimistic VF fallback via DESIGN.md) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- GSAP CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-theme="dark">
+
+  <!-- ── NAVIGATION ──────────────────────────────────────────── -->
+  <nav id="main-nav" aria-label="Primary navigation">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo" aria-label="Sasyam home">
+        <span class="logo-leaf" aria-hidden="true">🌾</span>
+        <span class="logo-text">Sasyam</span>
+      </a>
+
+      <ul class="nav-links" role="list">
+        <li><a href="#features"   class="nav-link" id="nav-features">Features</a></li>
+        <li><a href="#technology" class="nav-link" id="nav-technology">Technology</a></li>
+        <li><a href="#solutions"  class="nav-link" id="nav-solutions">Solutions</a></li>
+        <li><a href="#contact"    class="nav-link" id="nav-contact">Contact</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="dashboard.html" class="btn btn-secondary">Dashboard</a>
+        <a href="register.html"  class="btn btn-primary">Register Farm</a>
+        <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" title="Toggle light/dark">
+          <span class="theme-icon" aria-hidden="true">☀</span>
+        </button>
+      </div>
+
+      <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+
+    <!-- Mobile overlay menu -->
+    <div class="mobile-menu" id="mobile-menu" aria-hidden="true" role="dialog">
+      <ul role="list">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#technology">Technology</a></li>
+        <li><a href="#solutions">Solutions</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="register.html">Register Farm</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── HERO — Dark product moment ─────────────────────────── -->
+  <section id="hero" aria-label="Hero section">
+    <!-- Scroll-driven image sequence canvas -->
+    <canvas id="bloom-canvas" aria-hidden="true"></canvas>
+    <!-- Gradient scrim per DESIGN.md: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.6)) -->
+    <div class="hero-overlay" aria-hidden="true"></div>
+
+    <div class="hero-content">
+      <!-- Eyebrow pill badge -->
+      <div class="hero-badge" id="hero-badge">
+        <span class="badge-dot" aria-hidden="true"></span>
+        AI-Powered Agricultural Intelligence
+      </div>
+
+      <!-- Display 1 — 64px / 500 per DESIGN.md -->
+      <h1 class="hero-title" id="hero-title">
+        <span class="title-line">Sasyam</span>
+        <span class="title-sub">सस्यम्</span>
+      </h1>
+
+      <!-- Tagline -->
+      <p class="hero-tagline" id="hero-tagline">Mapping India's Harvest in Real Time</p>
+
+      <p class="hero-desc" id="hero-desc">
+        Empowering 140 million Indian farmers with precision AI, real-time market intelligence,
+        and satellite-grade crop analytics — from field to market.
+      </p>
+
+      <!-- Pill CTAs — Meta Blue primary, outlined secondary -->
+      <div class="hero-cta">
+        <a href="dashboard.html" class="btn btn-primary btn-lg" id="cta-dashboard">
+          Explore Dashboard
+        </a>
+        <a href="register.html" class="btn btn-secondary btn-lg" id="cta-register">
+          Register Your Farm
+        </a>
+      </div>
+
+      <!-- Stats row -->
+      <div class="hero-stats" id="hero-stats" aria-label="Platform statistics">
+        <div class="hero-stat">
+          <span class="stat-value">28</span>
+          <span class="stat-label">States Covered</span>
+        </div>
+        <div class="hero-stat">
+          <span class="stat-value">7</span>
+          <span class="stat-label">Major Crops</span>
+        </div>
+        <div class="hero-stat">
+          <span class="stat-value">Real-time</span>
+          <span class="stat-label">Market Prices</span>
+        </div>
+      </div>
+    </div>
+
+    <a href="#features" class="scroll-indicator" aria-label="Scroll to features">
+      <span class="scroll-dot"></span>
+    </a>
+  </section>
+
+  <!-- ── FEATURES — Light section ───────────────────────────── -->
+  <section id="features" aria-labelledby="features-heading">
+    <div class="section-inner">
+      <div class="section-header">
+        <span class="section-tag">Core Features</span>
+        <h2 id="features-heading" class="section-title">
+          Intelligence Built for the Field
+        </h2>
+        <p class="section-desc">
+          From AI crop detection to MSP-aligned market signals — every tool designed with India's agricultural complexity in mind.
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <article class="feature-card" data-animate="fade-up">
+          <div class="feature-icon" aria-hidden="true">🌿</div>
+          <h3>Crop Disease Detection</h3>
+          <p>MobileNetV2-powered image analysis identifies crop diseases with &gt;92% accuracy from a single photo.</p>
+        </article>
+
+        <article class="feature-card" data-animate="fade-up">
+          <div class="feature-icon" aria-hidden="true">📊</div>
+          <h3>Market Intelligence</h3>
+          <p>Real-time MSP rates, mandi prices, and demand forecasts across 28 states updated every 30 minutes.</p>
+        </article>
+
+        <article class="feature-card" data-animate="fade-up">
+          <div class="feature-icon" aria-hidden="true">🌧</div>
+          <h3>Weather-Aware Planning</h3>
+          <p>Hyper-local weather forecasts integrated with soil moisture data to optimise irrigation and sowing cycles.</p>
+        </article>
+
+        <article class="feature-card" data-animate="fade-up">
+          <div class="feature-icon" aria-hidden="true">🤖</div>
+          <h3>AI Crop Suggestor</h3>
+          <p>6-dimensional scoring: price trends, demand, ROI, risk, water availability, and land fit.</p>
+        </article>
+
+        <article class="feature-card" data-animate="fade-up">
+          <div class="feature-icon" aria-hidden="true">🗺</div>
+          <h3>Choropleth Mapping</h3>
+          <p>Interactive state-level yield heatmaps powered by Leaflet.js with real Indian agricultural statistics.</p>
+        </article>
+
+        <article class="feature-card" data-animate="fade-up">
+          <div class="feature-icon" aria-hidden="true">💬</div>
+          <h3>Gemini AI Assistant</h3>
+          <p>Conversational AI with MSP rates &amp; regional yield benchmarks, answering in Hindi and English.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TECHNOLOGY — Soft Gray (alternating) ───────────────── -->
+  <section id="technology" aria-labelledby="tech-heading">
+    <div class="section-inner">
+      <div class="section-header">
+        <span class="section-tag">Technology Stack</span>
+        <h2 id="tech-heading" class="section-title">Engineered for Scale</h2>
+        <p class="section-desc">
+          Modern AI and cloud infrastructure built to serve millions of farmers across India.
+        </p>
+      </div>
+
+      <div class="tech-grid">
+        <div class="tech-layer" data-animate="fade-right">
+          <h3 class="tech-layer-title">Frontend</h3>
+          <ul class="tech-list" role="list">
+            <li>Vanilla JS + GSAP scroll animations</li>
+            <li>Chart.js for data visualisation</li>
+            <li>Leaflet.js choropleth maps</li>
+            <li>Firebase Firestore SDK v9</li>
+          </ul>
+        </div>
+        <div class="tech-layer" data-animate="fade-up">
+          <h3 class="tech-layer-title">AI / ML</h3>
+          <ul class="tech-list" role="list">
+            <li>TensorFlow + MobileNetV2</li>
+            <li>Gemini 2.5 Flash (multi-model fallback)</li>
+            <li>Transfer learning + fine-tuning</li>
+            <li>Model hosted on Hugging Face Hub</li>
+          </ul>
+        </div>
+        <div class="tech-layer" data-animate="fade-left">
+          <h3 class="tech-layer-title">Backend</h3>
+          <ul class="tech-list" role="list">
+            <li>FastAPI with async routes</li>
+            <li>Firebase Admin SDK</li>
+            <li>Hugging Face Hub model loader</li>
+            <li>Deployed on Render</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SOLUTIONS — White section ──────────────────────────── -->
+  <section id="solutions" aria-labelledby="solutions-heading">
+    <div class="section-inner">
+      <div class="section-header">
+        <span class="section-tag">Who It's For</span>
+        <h2 id="solutions-heading" class="section-title">Solutions for Every Stakeholder</h2>
+        <p class="section-desc">
+          Purpose-built tools for every link in India's agricultural value chain.
+        </p>
+      </div>
+
+      <div class="solutions-grid">
+        <article class="solution-card" data-animate="fade-up">
+          <span class="solution-icon" aria-hidden="true">👨‍🌾</span>
+          <h3>Small &amp; Marginal Farmers</h3>
+          <p>Simple interface with local language support. Crop advisory in seconds, not days.</p>
+        </article>
+
+        <article class="solution-card" data-animate="fade-up">
+          <span class="solution-icon" aria-hidden="true">🏛</span>
+          <h3>State Agriculture Departments</h3>
+          <p>State-level dashboards showing yield trends, distress signals, and crop distribution maps.</p>
+        </article>
+
+        <article class="solution-card" data-animate="fade-up">
+          <span class="solution-icon" aria-hidden="true">🏭</span>
+          <h3>Agri-Input Companies</h3>
+          <p>Demand forecasting by crop and region to optimise fertiliser distribution.</p>
+        </article>
+
+        <article class="solution-card" data-animate="fade-up">
+          <span class="solution-icon" aria-hidden="true">📦</span>
+          <h3>Food Processing Industry</h3>
+          <p>Supply chain intelligence — know which crops will be available, in which states, and when.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CONTACT — Soft Gray section ───────────────────────── -->
+  <section id="contact" aria-labelledby="contact-heading">
+    <div class="section-inner contact-inner">
+      <div class="section-header">
+        <span class="section-tag">Get in Touch</span>
+        <h2 id="contact-heading" class="section-title">Partner with Sasyam</h2>
+        <p class="section-desc">
+          Join us in building the digital backbone of Indian agriculture.
+        </p>
+      </div>
+
+      <form id="contact-form" class="contact-form" novalidate aria-label="Contact form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="contact-name">Name</label>
+            <input type="text" id="contact-name" name="name" placeholder="Your name" required autocomplete="name" />
+          </div>
+          <div class="form-group">
+            <label for="contact-email">Email</label>
+            <input type="email" id="contact-email" name="email" placeholder="your@email.com" required autocomplete="email" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="contact-message">Message</label>
+          <textarea id="contact-message" name="message" rows="5" placeholder="Tell us about your organisation and how you'd like to collaborate…" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" id="contact-submit">Send Message</button>
+        <div id="contact-status" role="status" aria-live="polite"></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ── FOOTER — Always dark (Near Black) ─────────────────── -->
+  <footer id="main-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="index.html" class="nav-logo" aria-label="Sasyam home">
+          <span class="logo-leaf" aria-hidden="true">🌾</span>
+          <span class="logo-text" style="color:#fff">Sasyam</span>
+        </a>
+        <p>Mapping India's Harvest in Real Time</p>
+      </div>
+      <nav class="footer-links" aria-label="Footer navigation">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="register.html">Register</a>
+        <a href="#features">Features</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <p class="footer-copy">&copy; 2024 Sasyam. Built for India's farmers.</p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/flower.js" defer></script>
+  <script src="js/script.js" defer></script>
+</body>
+</html>

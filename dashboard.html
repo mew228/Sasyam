@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sasyam Dashboard — Real-time crop analytics, market intelligence, Leaflet choropleth maps, and AI crop suggestor for Indian agriculture." />
+  <title>Sasyam Dashboard — Agricultural Intelligence</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+
+  <!-- Leaflet.js -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/dashboard.css" />
+</head>
+<body data-theme="dark">
+
+  <!-- ── TOP NAV ────────────────────────────────────────────── -->
+  <header id="dash-header" role="banner">
+    <nav class="dash-nav" aria-label="Dashboard navigation">
+      <a href="index.html" class="dash-logo" aria-label="Sasyam home">
+        <span class="logo-leaf">🌾</span>
+        <span class="logo-text">Sasyam</span>
+        <span class="logo-badge">Dashboard</span>
+      </a>
+
+      <div class="dash-nav-center">
+        <span id="last-updated" class="update-chip" aria-live="polite">
+          <span class="update-dot" aria-hidden="true"></span>
+          Live Data
+        </span>
+      </div>
+
+      <div class="dash-nav-actions">
+        <a href="register.html" class="btn-nav">Register Farm</a>
+        <a href="index.html" class="btn-nav">← Home</a>
+        <button id="theme-toggle" class="theme-btn" aria-label="Toggle light/dark theme" title="Toggle theme">
+          <span class="theme-icon">☀</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ── MAIN LAYOUT ────────────────────────────────────────── -->
+  <main id="dash-main" class="dash-layout">
+
+    <!-- ── STATS BAR ────────────────────────────────────────── -->
+    <section id="stats-bar" class="stats-bar" aria-label="Platform statistics">
+      <div class="stat-card" id="stat-farmers">
+        <div class="stat-card-icon" aria-hidden="true">👨‍🌾</div>
+        <div class="stat-card-body">
+          <span class="stat-card-value" id="val-farmers">—</span>
+          <span class="stat-card-label">Total Farmers</span>
+        </div>
+        <div class="stat-card-trend positive" aria-label="increasing trend" aria-hidden="true">↑</div>
+      </div>
+
+      <div class="stat-card" id="stat-area">
+        <div class="stat-card-icon" aria-hidden="true">🗺</div>
+        <div class="stat-card-body">
+          <span class="stat-card-value" id="val-area">—</span>
+          <span class="stat-card-label">Area Coverage (acres)</span>
+        </div>
+        <div class="stat-card-trend positive" aria-label="increasing trend" aria-hidden="true">↑</div>
+      </div>
+
+      <div class="stat-card" id="stat-yield">
+        <div class="stat-card-icon" aria-hidden="true">📊</div>
+        <div class="stat-card-body">
+          <span class="stat-card-value" id="val-yield">—</span>
+          <span class="stat-card-label">Avg Yield (q/acre)</span>
+        </div>
+        <div class="stat-card-trend neutral" aria-label="stable trend" aria-hidden="true">→</div>
+      </div>
+
+      <div class="stat-card" id="stat-crops">
+        <div class="stat-card-icon" aria-hidden="true">🌾</div>
+        <div class="stat-card-body">
+          <span class="stat-card-value" id="val-crops">—</span>
+          <span class="stat-card-label">Active Crops</span>
+        </div>
+        <div class="stat-card-trend positive" aria-label="increasing trend" aria-hidden="true">↑</div>
+      </div>
+    </section>
+
+    <!-- ── CONTENT GRID ──────────────────────────────────────── -->
+    <div class="dash-content-grid">
+
+      <!-- Left Column -->
+      <div class="dash-col-left">
+
+        <!-- Crop Distribution Chart -->
+        <section class="dash-card" id="crop-chart-section" aria-labelledby="crop-chart-heading">
+          <div class="card-header">
+            <h2 id="crop-chart-heading" class="card-title">Crop Distribution</h2>
+            <span class="card-subtitle">Current Season</span>
+          </div>
+          <div id="crop-chart-container" class="chart-container doughnut-container">
+            <canvas id="crop-chart" role="img" aria-label="Doughnut chart showing crop distribution"></canvas>
+          </div>
+          <div id="crop-chart-legend" class="chart-legend" aria-label="Chart legend"></div>
+        </section>
+
+        <!-- Price Prediction Chart -->
+        <section class="dash-card" id="price-chart-section" aria-labelledby="price-chart-heading">
+          <div class="card-header">
+            <h2 id="price-chart-heading" class="card-title">Price Trend (7-Day)</h2>
+            <div class="card-actions">
+              <select id="price-crop-select" class="dash-select" aria-label="Select crop for price trend">
+                <option value="Wheat">Wheat</option>
+                <option value="Rice">Rice</option>
+                <option value="Corn">Corn</option>
+                <option value="Sugarcane">Sugarcane</option>
+                <option value="Cotton">Cotton</option>
+                <option value="Mustard">Mustard</option>
+                <option value="Pulses">Pulses</option>
+              </select>
+            </div>
+          </div>
+          <div class="chart-container line-container">
+            <canvas id="price-chart" role="img" aria-label="Line chart showing price trends"></canvas>
+          </div>
+        </section>
+
+        <!-- Market Intelligence -->
+        <section class="dash-card" id="market-section" aria-labelledby="market-heading">
+          <div class="card-header">
+            <h2 id="market-heading" class="card-title">Market Intelligence</h2>
+            <span class="update-chip small" aria-live="polite">
+              <span class="update-dot" aria-hidden="true"></span>
+              Live
+            </span>
+          </div>
+          <div class="market-grid">
+            <article class="market-card" id="market-supply" aria-label="Supply status">
+              <div class="market-card-header">
+                <span class="market-icon" aria-hidden="true">📦</span>
+                <h3>Supply Status</h3>
+              </div>
+              <div class="market-badges" id="supply-badges">
+                <div class="market-badge" data-status="stable">
+                  <span class="badge-pulse stable" aria-label="stable"></span>
+                  <span>Wheat — Stable</span>
+                </div>
+                <div class="market-badge" data-status="active">
+                  <span class="badge-pulse active" aria-label="active"></span>
+                  <span>Rice — Active</span>
+                </div>
+                <div class="market-badge" data-status="critical">
+                  <span class="badge-pulse critical" aria-label="critical"></span>
+                  <span>Cotton — Critical</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="market-card" id="market-conditions" aria-label="Market conditions">
+              <div class="market-card-header">
+                <span class="market-icon" aria-hidden="true">📈</span>
+                <h3>Market Conditions</h3>
+              </div>
+              <div id="market-conditions-body" class="market-conditions-body">
+                <!-- Populated by JS -->
+                <div class="mc-row">
+                  <span class="mc-label">MSP Alignment</span>
+                  <span class="mc-value positive">+4.2%</span>
+                </div>
+                <div class="mc-row">
+                  <span class="mc-label">Mandi Arrivals</span>
+                  <span class="mc-value">↑ 12%</span>
+                </div>
+                <div class="mc-row">
+                  <span class="mc-label">Export Demand</span>
+                  <span class="mc-value positive">High</span>
+                </div>
+                <div class="mc-row">
+                  <span class="mc-label">Procurement</span>
+                  <span class="mc-value neutral">Moderate</span>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Right Column -->
+      <div class="dash-col-right">
+
+        <!-- India Map -->
+        <section class="dash-card" id="map-section" aria-labelledby="map-heading">
+          <div class="card-header">
+            <h2 id="map-heading" class="card-title">India — Crop Yield Map</h2>
+            <span class="card-subtitle" id="map-selected-state">Click a state to explore</span>
+          </div>
+          <div id="india-map" class="leaflet-map-container" aria-label="Interactive map of India showing crop yields"></div>
+          <div id="map-state-info" class="map-state-panel" hidden aria-live="polite">
+            <h3 id="map-state-name" class="state-name">—</h3>
+            <div class="state-stats" id="map-state-stats"></div>
+          </div>
+        </section>
+
+        <!-- Weather Section -->
+        <section class="dash-card" id="weather-section" aria-labelledby="weather-heading">
+          <div class="card-header">
+            <h2 id="weather-heading" class="card-title">Weather Overview</h2>
+            <select id="weather-state-select" class="dash-select" aria-label="Select state for weather">
+              <option value="Maharashtra">Maharashtra</option>
+              <option value="Punjab">Punjab</option>
+              <option value="Uttar Pradesh">Uttar Pradesh</option>
+              <option value="Madhya Pradesh">Madhya Pradesh</option>
+              <option value="Rajasthan">Rajasthan</option>
+              <option value="Gujarat">Gujarat</option>
+              <option value="Karnataka">Karnataka</option>
+              <option value="Haryana">Haryana</option>
+            </select>
+          </div>
+          <div id="weather-display" class="weather-display" aria-live="polite">
+            <div class="weather-main">
+              <!-- CSS-only animated weather icon rendered by JS -->
+              <div id="weather-icon" class="weather-icon-wrapper" aria-hidden="true">
+                <div class="weather-icon sunny">
+                  <div class="sun">
+                    <div class="sun-rays">
+                      <span></span><span></span><span></span><span></span>
+                      <span></span><span></span><span></span><span></span>
+                    </div>
+                    <div class="sun-core"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="weather-temp-group">
+                <span id="weather-temp" class="weather-temp">—°C</span>
+                <span id="weather-desc" class="weather-desc">Loading…</span>
+              </div>
+            </div>
+            <div class="weather-details" id="weather-details">
+              <div class="wd-item">
+                <span class="wd-label">Humidity</span>
+                <span class="wd-value" id="wd-humidity">—%</span>
+              </div>
+              <div class="wd-item">
+                <span class="wd-label">Wind</span>
+                <span class="wd-value" id="wd-wind">— km/h</span>
+              </div>
+              <div class="wd-item">
+                <span class="wd-label">Rainfall (7d)</span>
+                <span class="wd-value" id="wd-rain">— mm</span>
+              </div>
+              <div class="wd-item">
+                <span class="wd-label">Advisory</span>
+                <span class="wd-value" id="wd-advisory">—</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Crop Suggestor -->
+        <section class="dash-card" id="suggestor-section" aria-labelledby="suggestor-heading">
+          <div class="card-header">
+            <h2 id="suggestor-heading" class="card-title">AI Crop Suggestor</h2>
+            <span class="card-subtitle">6-Dimension Scoring</span>
+          </div>
+          <form id="suggestor-form" class="suggestor-form" novalidate aria-label="Crop suggestion form">
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="sug-state">State</label>
+                <select id="sug-state" name="state" required aria-required="true">
+                  <option value="">Select State</option>
+                  <option>Andhra Pradesh</option><option>Arunachal Pradesh</option>
+                  <option>Assam</option><option>Bihar</option><option>Chhattisgarh</option>
+                  <option>Goa</option><option>Gujarat</option><option>Haryana</option>
+                  <option>Himachal Pradesh</option><option>Jharkhand</option>
+                  <option>Karnataka</option><option>Kerala</option>
+                  <option>Madhya Pradesh</option><option>Maharashtra</option>
+                  <option>Manipur</option><option>Meghalaya</option><option>Mizoram</option>
+                  <option>Nagaland</option><option>Odisha</option><option>Punjab</option>
+                  <option>Rajasthan</option><option>Sikkim</option><option>Tamil Nadu</option>
+                  <option>Telangana</option><option>Tripura</option>
+                  <option>Uttar Pradesh</option><option>Uttarakhand</option>
+                  <option>West Bengal</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="sug-land">Land Size (acres)</label>
+                <input type="number" id="sug-land" name="land" min="0.5" max="1000" step="0.5" placeholder="e.g. 5" required aria-required="true" />
+              </div>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="sug-water">Water Source</label>
+                <select id="sug-water" name="water" required aria-required="true">
+                  <option value="">Select Source</option>
+                  <option value="canal">Canal Irrigation</option>
+                  <option value="borewell">Borewell</option>
+                  <option value="rainwater">Rainwater Only</option>
+                  <option value="river">River / Tank</option>
+                  <option value="drip">Drip Irrigation</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="sug-budget">Budget (₹ per acre)</label>
+                <input type="number" id="sug-budget" name="budget" min="5000" max="200000" step="1000" placeholder="e.g. 25000" />
+              </div>
+            </div>
+            <button type="submit" class="btn-primary" id="sug-submit">
+              <span class="btn-text">Get Crop Suggestions</span>
+              <span class="btn-loader" hidden aria-hidden="true">⟳</span>
+            </button>
+          </form>
+          <div id="suggestor-results" class="suggestor-results" aria-live="polite" hidden></div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ── AI ASSISTANT PANEL ─────────────────────────────────── -->
+  <div id="ai-chat" class="ai-chat-panel" aria-label="AI Assistant" role="complementary">
+    <button id="ai-chat-toggle" class="ai-chat-toggle" aria-expanded="false" aria-controls="ai-chat-body">
+      <span class="ai-toggle-icon">🤖</span>
+      <span class="ai-toggle-label">Sasyam AI</span>
+      <span class="ai-toggle-chevron" aria-hidden="true">▲</span>
+    </button>
+    <div id="ai-chat-body" class="ai-chat-body" hidden>
+      <div class="ai-chat-header">
+        <div class="ai-avatar" aria-hidden="true">🌾</div>
+        <div class="ai-header-text">
+          <span class="ai-name">Sasyam Assistant</span>
+          <span class="ai-status">Powered by Gemini 2.5 Flash</span>
+        </div>
+        <button class="ai-clear" id="ai-clear" aria-label="Clear chat history" title="Clear conversation">✕</button>
+      </div>
+      <div id="ai-messages" class="ai-messages" role="log" aria-live="polite" aria-label="Chat messages">
+        <div class="ai-msg assistant">
+          <div class="msg-bubble">
+            Namaste! 🙏 I'm your Sasyam agricultural assistant. Ask me about MSP rates, crop recommendations, disease treatment, market prices, or any farming query in Hindi or English.
+          </div>
+        </div>
+      </div>
+      <form id="ai-form" class="ai-input-form" aria-label="Ask the AI assistant">
+        <input
+          type="text"
+          id="ai-input"
+          class="ai-input"
+          placeholder="Ask about crops, prices, weather…"
+          autocomplete="off"
+          aria-label="Your message to the AI"
+        />
+        <button type="submit" class="ai-send" aria-label="Send message">➤</button>
+      </form>
+      <div class="ai-model-indicator" aria-live="polite" id="ai-model-indicator">
+        Model: <span id="ai-model-name">gemini-2.5-flash</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/dashboard.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Register your farm on Sasyam — India's agricultural intelligence platform. Join thousands of farmers tracking crops, yields, and market prices." />
+  <title>Register Farm — Sasyam Agricultural Platform</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/register.css" />
+</head>
+<body data-theme="dark">
+
+  <!-- ── NAVIGATION ────────────────────────────────────────── -->
+  <nav class="reg-nav" aria-label="Registration page navigation">
+    <a href="index.html" class="nav-logo" aria-label="Sasyam home">
+      <span class="logo-leaf">🌾</span>
+      <span class="logo-text">Sasyam</span>
+    </a>
+    <div class="reg-nav-links">
+      <a href="dashboard.html" class="btn-nav">Dashboard</a>
+      <a href="index.html" class="btn-nav">← Home</a>
+    </div>
+  </nav>
+
+  <!-- ── MAIN ──────────────────────────────────────────────── -->
+  <main class="reg-main">
+
+    <!-- Registration Form Section -->
+    <section class="reg-form-section" aria-labelledby="reg-form-heading">
+      <div class="reg-card">
+        <div class="reg-card-header">
+          <span class="reg-icon" aria-hidden="true">👨‍🌾</span>
+          <h1 id="reg-form-heading" class="reg-title">Register Your Farm</h1>
+          <p class="reg-subtitle">Join the Sasyam network and get AI-powered insights for your crops</p>
+        </div>
+
+        <form id="farmer-form" class="farmer-form" novalidate aria-label="Farmer registration form">
+
+          <!-- Full Name -->
+          <div class="form-group">
+            <label for="farmer-name">Farmer Name <span class="required" aria-hidden="true">*</span></label>
+            <input
+              type="text"
+              id="farmer-name"
+              name="name"
+              placeholder="Enter full name"
+              required
+              aria-required="true"
+              autocomplete="name"
+              maxlength="100"
+            />
+            <span class="field-error" id="err-name" role="alert" aria-live="polite"></span>
+          </div>
+
+          <!-- State -->
+          <div class="form-group">
+            <label for="farmer-state">State <span class="required" aria-hidden="true">*</span></label>
+            <select id="farmer-state" name="state" required aria-required="true">
+              <option value="">Select your state</option>
+              <option value="Andhra Pradesh">Andhra Pradesh</option>
+              <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+              <option value="Assam">Assam</option>
+              <option value="Bihar">Bihar</option>
+              <option value="Chhattisgarh">Chhattisgarh</option>
+              <option value="Goa">Goa</option>
+              <option value="Gujarat">Gujarat</option>
+              <option value="Haryana">Haryana</option>
+              <option value="Himachal Pradesh">Himachal Pradesh</option>
+              <option value="Jharkhand">Jharkhand</option>
+              <option value="Karnataka">Karnataka</option>
+              <option value="Kerala">Kerala</option>
+              <option value="Madhya Pradesh">Madhya Pradesh</option>
+              <option value="Maharashtra">Maharashtra</option>
+              <option value="Manipur">Manipur</option>
+              <option value="Meghalaya">Meghalaya</option>
+              <option value="Mizoram">Mizoram</option>
+              <option value="Nagaland">Nagaland</option>
+              <option value="Odisha">Odisha</option>
+              <option value="Punjab">Punjab</option>
+              <option value="Rajasthan">Rajasthan</option>
+              <option value="Sikkim">Sikkim</option>
+              <option value="Tamil Nadu">Tamil Nadu</option>
+              <option value="Telangana">Telangana</option>
+              <option value="Tripura">Tripura</option>
+              <option value="Uttar Pradesh">Uttar Pradesh</option>
+              <option value="Uttarakhand">Uttarakhand</option>
+              <option value="West Bengal">West Bengal</option>
+            </select>
+            <span class="field-error" id="err-state" role="alert" aria-live="polite"></span>
+          </div>
+
+          <!-- District -->
+          <div class="form-group">
+            <label for="farmer-district">District <span class="required" aria-hidden="true">*</span></label>
+            <input
+              type="text"
+              id="farmer-district"
+              name="district"
+              placeholder="Enter your district"
+              required
+              aria-required="true"
+              maxlength="80"
+            />
+            <span class="field-error" id="err-district" role="alert" aria-live="polite"></span>
+          </div>
+
+          <!-- Land Size -->
+          <div class="form-group">
+            <label for="farmer-land">Land Size (acres) <span class="required" aria-hidden="true">*</span></label>
+            <input
+              type="number"
+              id="farmer-land"
+              name="landSize"
+              placeholder="e.g. 3.5"
+              min="0.1"
+              max="10000"
+              step="0.1"
+              required
+              aria-required="true"
+            />
+            <span class="field-hint">Enter total cultivable area in acres</span>
+            <span class="field-error" id="err-land" role="alert" aria-live="polite"></span>
+          </div>
+
+          <!-- Primary Crop -->
+          <div class="form-group">
+            <label for="farmer-crop">Primary Crop <span class="required" aria-hidden="true">*</span></label>
+            <select id="farmer-crop" name="primaryCrop" required aria-required="true">
+              <option value="">Select primary crop</option>
+              <option value="Wheat">Wheat (गेहूँ)</option>
+              <option value="Rice">Rice (चावल)</option>
+              <option value="Corn">Corn / Maize (मक्का)</option>
+              <option value="Sugarcane">Sugarcane (गन्ना)</option>
+              <option value="Cotton">Cotton (कपास)</option>
+              <option value="Mustard">Mustard (सरसों)</option>
+              <option value="Pulses">Pulses (दलहन)</option>
+            </select>
+            <span class="field-error" id="err-crop" role="alert" aria-live="polite"></span>
+          </div>
+
+          <!-- Water Source -->
+          <div class="form-group">
+            <label for="farmer-water">Water Source <span class="required" aria-hidden="true">*</span></label>
+            <select id="farmer-water" name="waterSource" required aria-required="true">
+              <option value="">Select water source</option>
+              <option value="Canal Irrigation">Canal Irrigation (नहर)</option>
+              <option value="Borewell">Borewell / Tubewell</option>
+              <option value="Rainwater">Rainwater Only (वर्षा जल)</option>
+              <option value="River / Tank">River / Tank / Pond</option>
+              <option value="Drip Irrigation">Drip / Sprinkler Irrigation</option>
+              <option value="Combined">Multiple Sources</option>
+            </select>
+            <span class="field-error" id="err-water" role="alert" aria-live="polite"></span>
+          </div>
+
+          <!-- Phone Number -->
+          <div class="form-group">
+            <label for="farmer-phone">Phone Number <span class="required" aria-hidden="true">*</span></label>
+            <div class="phone-input-group">
+              <span class="phone-prefix" aria-hidden="true">+91</span>
+              <input
+                type="tel"
+                id="farmer-phone"
+                name="phone"
+                placeholder="10-digit mobile number"
+                pattern="[0-9]{10}"
+                maxlength="10"
+                required
+                aria-required="true"
+                autocomplete="tel"
+              />
+            </div>
+            <span class="field-hint">We'll send crop alerts via SMS</span>
+            <span class="field-error" id="err-phone" role="alert" aria-live="polite"></span>
+          </div>
+
+          <!-- Submit -->
+          <div class="form-actions">
+            <button type="submit" class="submit-btn" id="submit-btn">
+              <span class="btn-text" id="submit-text">Register Farm</span>
+              <span class="btn-loader" id="submit-loader" hidden aria-hidden="true">
+                <span class="spinner"></span>
+                Registering…
+              </span>
+            </button>
+            <button type="reset" class="reset-btn" id="reset-btn">Clear Form</button>
+          </div>
+
+          <!-- Status message -->
+          <div id="form-status" class="form-status" role="status" aria-live="polite" hidden></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── FARMER REGISTRY ────────────────────────────────── -->
+    <section class="registry-section" aria-labelledby="registry-heading">
+      <div class="registry-header">
+        <h2 id="registry-heading" class="registry-title">Farmer Registry</h2>
+
+        <div class="registry-controls">
+          <div class="search-container">
+            <span class="search-icon" aria-hidden="true">🔍</span>
+            <input
+              type="search"
+              id="farmer-search"
+              class="search-input"
+              placeholder="Search by name, state, or crop…"
+              aria-label="Search registered farmers"
+            />
+            <button class="search-clear" id="search-clear" aria-label="Clear search" hidden>✕</button>
+          </div>
+
+          <div class="registry-badges">
+            <span class="badge badge-total" id="badge-total" aria-live="polite">
+              Total: <strong id="count-total">0</strong>
+            </span>
+            <span class="badge badge-filtered" id="badge-filtered" hidden aria-live="polite">
+              Showing: <strong id="count-filtered">0</strong>
+            </span>
+          </div>
+
+          <button id="export-csv" class="export-btn" aria-label="Export farmer data as CSV" disabled>
+            📥 Export CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Live update indicator -->
+      <div class="live-indicator" aria-live="polite" id="live-indicator">
+        <span class="live-dot" aria-hidden="true"></span>
+        Real-time updates from Firestore
+      </div>
+
+      <div class="table-wrapper" role="region" aria-label="Registered farmers table" tabindex="0">
+        <table id="farmer-table" class="farmer-table" aria-describedby="registry-heading">
+          <thead>
+            <tr>
+              <th scope="col" class="sortable" data-col="name" aria-sort="none">
+                Name <span class="sort-icon" aria-hidden="true">⇅</span>
+              </th>
+              <th scope="col" class="sortable" data-col="state" aria-sort="none">
+                State <span class="sort-icon" aria-hidden="true">⇅</span>
+              </th>
+              <th scope="col">District</th>
+              <th scope="col" class="sortable" data-col="landSize" aria-sort="none">
+                Land (acres) <span class="sort-icon" aria-hidden="true">⇅</span>
+              </th>
+              <th scope="col" class="sortable" data-col="primaryCrop" aria-sort="none">
+                Crop <span class="sort-icon" aria-hidden="true">⇅</span>
+              </th>
+              <th scope="col">Water Source</th>
+              <th scope="col">Phone</th>
+              <th scope="col">Registered</th>
+            </tr>
+          </thead>
+          <tbody id="farmer-tbody">
+            <tr class="table-empty-row" id="table-placeholder">
+              <td colspan="8" class="table-empty">
+                <span class="empty-icon" aria-hidden="true">🌱</span>
+                <span>Loading farmer data…</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="table-pagination" class="table-pagination" aria-label="Table pagination">
+        <button id="prev-page" class="page-btn" disabled aria-label="Previous page">← Prev</button>
+        <span id="page-info" class="page-info">Page 1</span>
+        <button id="next-page" class="page-btn" disabled aria-label="Next page">Next →</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Scripts -->
+  <script type="module">
+    // Firebase modular SDK v9 via CDN
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import {
+      getFirestore, collection, addDoc, getDocs, onSnapshot,
+      serverTimestamp, query, orderBy
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    // Expose to window so register.js can use them
+    window._firebase = { initializeApp, getFirestore, collection, addDoc, getDocs, onSnapshot, serverTimestamp, query, orderBy };
+  </script>
+  <script src="js/config.js"></script>
+  <script src="js/register.js" defer></script>
+</body>
+</html>
